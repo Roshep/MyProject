@@ -1,0 +1,177 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MySql.Data;
+using MySql.Data.MySqlClient;
+
+namespace StrahovaniePrograms.Меню_Администратора
+{
+    public partial class МенеджерПользователей : Form
+    {
+        string connectionString = "server=127.0.0.1;user id=root;password=12345;port=3306;persistsecurityinfo=True;database=mydata";
+        int idLogin;
+       
+        public МенеджерПользователей()
+        {
+            InitializeComponent();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            using (MySqlConnection mySqlCon = new MySqlConnection(connectionString))
+            {
+                mySqlCon.Open();
+                MySqlDataAdapter sqlDa = new MySqlDataAdapter("LoginSearchByValue", mySqlCon);
+                sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
+                sqlDa.SelectCommand.Parameters.AddWithValue("_SearchValue", txtSearch.Text);
+                DataTable dtblLogin = new DataTable();
+                sqlDa.Fill(dtblLogin);
+                dgvLogin.DataSource = dtblLogin;
+                dgvLogin.Columns[0].Visible = false;
+            }
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            using (MySqlConnection mySqlCon = new MySqlConnection(connectionString))
+            {
+                
+                mySqlCon.Open();
+                MySqlCommand mySqlCmd = new MySqlCommand("LoginAddOrEdit", mySqlCon);
+                mySqlCmd.CommandType = CommandType.StoredProcedure;
+                mySqlCmd.Parameters.AddWithValue("_idLogin", idLogin);
+                mySqlCmd.Parameters.AddWithValue("_Login", txtLogin.Text.Trim());
+                mySqlCmd.Parameters.AddWithValue("_Pass", txtPassword.Text.Trim());
+                mySqlCmd.Parameters.AddWithValue("_idrol", comboBox1.Text.Trim());
+
+                if ((txtLogin.Text.Equals("")) | (txtPassword.Text.Equals("")) | (comboBox1.Text.Equals("")))
+                MessageBox.Show("Вы не заполнили Логин или пароль!");
+
+                else
+                {
+                    mySqlCmd.ExecuteNonQuery();
+                    MessageBox.Show("Пользователь добавлен!");
+                    Clear();
+                    GridFill();
+                }
+            }
+
+            
+        }
+        void GridFill()
+        {
+            using (MySqlConnection mySqlCon = new MySqlConnection(connectionString))
+            {
+                mySqlCon.Open();
+                MySqlDataAdapter sqlDa = new MySqlDataAdapter("LoginVievAll", mySqlCon);
+                sqlDa.SelectCommand.CommandType = CommandType.StoredProcedure;
+                DataTable dtblLogin = new DataTable();
+                sqlDa.Fill(dtblLogin);
+
+                dgvLogin.DataSource = dtblLogin;
+                dgvLogin.Columns[0].Visible = false;
+            } 
+
+        }
+
+        void Clear()
+        {
+            txtLogin.Text = txtPassword.Text = txtRol.Text = txtSearch.Text = "";
+            pictureBox1.Image = null;
+            idLogin = 0;
+            btnSave.Text = "Сохранить";
+            btnDelete.Enabled = false;
+        }
+        private void МенеджерПользователей_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            МенюАдминистратор s = new МенюАдминистратор();
+            s.Show();
+            this.Hide();
+        }
+
+        private void МенеджерПользователей_Load(object sender, EventArgs e)
+        {
+            Clear();
+            GridFill();
+
+            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            label1.BackColor = Color.Transparent;
+            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            label2.BackColor = Color.Transparent;
+            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            label3.BackColor = Color.Transparent;
+            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            dgvLogin.BackColor = Color.Transparent;
+        }
+
+        private void dgvLogin_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dgvLogin_DoubleClick(object sender, EventArgs e)
+        {
+
+
+            
+
+
+            if (dgvLogin.CurrentRow.Index != -1)
+            {
+                txtLogin.Text = dgvLogin.CurrentRow.Cells[1].Value.ToString();
+                txtPassword.Text = dgvLogin.CurrentRow.Cells[2].Value.ToString();
+                txtRol.Text = dgvLogin.CurrentRow.Cells[3].Value.ToString();
+
+
+
+
+                idLogin = Convert.ToInt32(dgvLogin.CurrentRow.Cells[0].Value.ToString());
+                    btnSave.Text = "Обновить";
+                    btnDelete.Enabled = Enabled;
+                
+            }
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            Clear();
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            using (MySqlConnection mySqlCon = new MySqlConnection(connectionString))
+            {
+                mySqlCon.Open();
+                MySqlCommand mySqlCmd = new MySqlCommand("LoginDeleteByID", mySqlCon);
+                mySqlCmd.CommandType = CommandType.StoredProcedure;
+                mySqlCmd.Parameters.AddWithValue("_idLogin", idLogin);
+                mySqlCmd.ExecuteNonQuery();
+                MessageBox.Show("Пользователь удален!");
+                Clear();
+                GridFill();
+                
+            }
+        }
+
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog opf = new OpenFileDialog();
+            opf.Filter = "Выберите изображение(*.jpg; *.png; *.gif)|*.jpg; *.png; *.gif";
+            if (opf.ShowDialog() == DialogResult.OK)
+            {
+                pictureBox1.Image = Image.FromFile(opf.FileName);
+            }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
